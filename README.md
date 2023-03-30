@@ -28,46 +28,56 @@ In this case, a [GitHub App](https://docs.github.com/en/developers/apps/getting-
 3. Add your GitHub App's "App ID" to your repo's [Actions Secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets) _(ex: `GH_APP_ID`)_
 4. Add your Private Key to your repo's [Actions Secrets](https://docs.github.com/en/actions/security-guides/encrypted-secrets) _(ex: `GH_APP_PRIVATE_KEY`)_
 5. Use [navikt/github-app-token-generator](https://github.com/navikt/github-app-token-generator) before using this action to generate a JWT
-   
-    #### Example
 
-    `cleanup-pr.yml`
+### Permissions to give your GitHub App
 
-    ```
-    #
-    # Cleans up a GitHub PR
-    #
-    name: 🧼 Clean up environment
-    on:
-    pull_request:
-      types:
-        - closed
+THe GitHub app created in step 1 above requires the following permissions under **repository permissions**:
 
-    jobs:
-      cleanup:
-        runs-on: ubuntu-latest
-        permissions: write-all
+- `Actions: Read`
+- `Administration: Read & Write`
+- `Deployments: Read & Write`
+- `Environments: Read & Write`
+- `Metadata: Read`
 
-        steps:
-          - uses: actions/checkout@v3
+#### Example
 
-          # Points to a recent commit instead of `main` to avoid supply chain attacks. (The latest tag is very old.)
-          - name: 🎟 Get GitHub App token
-            uses: navikt/github-app-token-generator@a3831f44404199df32d8f39f7c0ad9bb8fa18b1c
-            id: get-token
-            with:
-              app-id: ${{ secrets.GH_APP_ID }}
-              private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+`cleanup-pr.yml`
 
-          - name: 🗑 Delete deployment environment
-            uses: strumwolf/delete-deployment-environment@v2.2.3
-            with:
-              # Use a JWT created with your GitHub App's private key
-              token: ${{ steps.get-token.outputs.token }}
-              environment: pr-${{ github.event.number }}
-              ref: ${{ github.ref_name }}
+```
+#
+# Cleans up a GitHub PR
+#
+name: 🧼 Clean up environment
+on:
+pull_request:
+  types:
+    - closed
 
-    ```
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions: write-all
+
+    steps:
+      - uses: actions/checkout@v3
+
+      # Points to a recent commit instead of `main` to avoid supply chain attacks. (The latest tag is very old.)
+      - name: 🎟 Get GitHub App token
+        uses: navikt/github-app-token-generator@a3831f44404199df32d8f39f7c0ad9bb8fa18b1c
+        id: get-token
+        with:
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+
+      - name: 🗑 Delete deployment environment
+        uses: strumwolf/delete-deployment-environment@v2.2.3
+        with:
+          # Use a JWT created with your GitHub App's private key
+          token: ${{ steps.get-token.outputs.token }}
+          environment: pr-${{ github.event.number }}
+          ref: ${{ github.ref_name }}
+
+```
 
 ## Inputs
 
